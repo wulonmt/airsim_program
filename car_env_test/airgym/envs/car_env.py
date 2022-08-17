@@ -116,8 +116,8 @@ class AirSimCarEnv(AirSimEnv):
 
     def _compute_reward(self):
         MAX_SPEED = 20 #原先似乎太大
-        MIN_SPEED = 0
-        THRESH_DIST = 3
+        MIN_SPEED = 10
+        THRESH_DIST = 3.5
         BETA = 3
 
         pts = [
@@ -140,35 +140,38 @@ class AirSimCarEnv(AirSimEnv):
                 / np.linalg.norm(pts[i] - pts[i + 1]),
             )
         
-        done = 0
-        if self.state["collision"]:
-            print("Done -- collision\n")
-            reward = -2
-            done = 1
-            
-        elif dist > THRESH_DIST:
+        done = 0            
+        if dist > THRESH_DIST:
             reward = -2
             done = 1
             print("Done -- distance Out\n")
         else:
-            reward_dist = math.exp(-BETA * dist) - 0.3
+            reward_dist = math.exp(-BETA * dist) - 0.5
             speed = self.car_state.speed
             if speed > MAX_SPEED:
                 speed = MAX_SPEED
             reward_speed = (
                 (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
-            ) - 0.3
+            ) - 0.5
             
-            reward = reward_dist + reward_speed
-            #reward = reward_dist + reward_speed + 0.5 #因為很多reward都小於0所以+1看看
+            #reward = reward_dist + reward_speed
+            reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
             print("%-10s" % "reward", ': %8.3f'%float(reward))
             print()
-            if reward < -0.6:
+            if reward < -0.95:
                 done = 1
                 print("Done -- reward < -1\n")
+                
+            elif self.car_controls.brake == 0:
+                if self.car_state.speed <= 1:
+                    done = 1
+                    print("Done -- Speedless")
+            elif self.state["collision"]:
+                print("Done -- collision\n")
+                done = 1
         
         """
         done = 0
