@@ -5,5 +5,9 @@ register(
 )
 
 register(
-    id="airsim-car-sample-v0", entry_point="airgym.envs:AirSimCarEnv",
+    id="airsim-car-cont-action-sample-v0", entry_point="airgym.envs:AirSimCarEnvContAction",
+)
+
+register(
+    id="airsim-car-disc-action-sample-v0", entry_point="airgym.envs:AirSimCarEnvDiscAction",
 )

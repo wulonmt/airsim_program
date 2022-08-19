@@ -14,7 +14,7 @@ env = DummyVecEnv(
     [
         lambda: Monitor(
             gym.make(
-                "airgym:airsim-car-sample-v0",
+                "airgym:airsim-car-cont-action-sample-v0",
                 ip_address="127.0.0.1",
                 image_shape=(84, 84, 1),
             )

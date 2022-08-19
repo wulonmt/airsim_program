@@ -12,7 +12,7 @@ import numpy as np
 from numpy import savetxt
 
 action_file = "action.csv"
-class AirSimCarEnv(AirSimEnv):
+class AirSimCarEnvContAction(AirSimEnv):
     def __init__(self, ip_address, image_shape):
         super().__init__(image_shape)
 

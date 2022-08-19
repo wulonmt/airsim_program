@@ -14,7 +14,7 @@ env = DummyVecEnv(
     [
         lambda: Monitor(
             gym.make(
-                "airgym:airsim-car-sample-v0",
+                "airgym:airsim-car-disc-action-sample-v0",
                 ip_address="127.0.0.1",
                 image_shape=(84, 84, 1),
             )
@@ -24,17 +24,19 @@ env = DummyVecEnv(
 
 # Wrap env as VecTransposeImage to allow SB to handle frame observations
 env = VecTransposeImage(env)
+log_dir = "./tb_logs/"
 
 # Initialize RL algorithm type and parameters
 model = PPO(
     "CnnPolicy",
     env,
-    learning_rate=0.0005,
+    learning_rate=0.001,
     verbose=1,
     batch_size=32,
+    clip_range=0.5,
     max_grad_norm=10,
     device="cuda",
-    tensorboard_log="./tb_logs/",
+    tensorboard_log=log_dir,
 )
 
 # Create an evaluation callback with the same env, called every 10000 iterations
