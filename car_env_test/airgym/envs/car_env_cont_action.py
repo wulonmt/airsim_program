@@ -25,6 +25,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             "pose": None,
             "prev_pose": None,
             "collision": False,
+            "orientation": None
         }
 
         self.car = airsim.CarClient(ip=ip_address)
@@ -111,8 +112,13 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.state["prev_pose"] = self.state["pose"]
         self.state["pose"] = self.car_state.kinematics_estimated
         self.state["collision"] = self.car.simGetCollisionInfo().has_collided
+        self.state["orientation"] = self.car_state.kinematics_estimated.orientation
 
         return image
+        
+    def Quaternion_Z_deg(self, x): #x must be Quaternionr in airsim.type
+        r = 2*math.acos(x.w_val) #in rad
+        return r*180/math.pi #in deg
 
     def _compute_reward(self):
         MAX_SPEED = 20 #原先似乎太大
@@ -139,6 +145,21 @@ class AirSimCarEnvContAction(AirSimEnv):
                 )
                 / np.linalg.norm(pts[i] - pts[i + 1]),
             )
+            
+        #add boundary limit
+        bound = [
+            np.array([x, y, 0])
+            for x, y in [
+                (0, -128), (0, 125), (130, 125), (130, -128),
+                (0, -128),
+            ]
+        ]
+        bound_dist_sum = 0
+        for i in range(0, len(bound) - 1):
+            bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - pts[i+1])) / np.linalg.norm(pts[i] - pts[i+1]))
+            
+        bound_dist_sum -= (130 + 253)
+        bound_dist_sum /= 2
         
         done = 0            
         if dist > THRESH_DIST:
@@ -147,6 +168,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             print("Done -- distance Out\n")
         else:
             reward_dist = math.exp(-BETA * dist) - 0.5
+            
             speed = self.car_state.speed
             if speed > MAX_SPEED:
                 speed = MAX_SPEED
@@ -154,11 +176,16 @@ class AirSimCarEnvContAction(AirSimEnv):
                 (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
             ) - 0.5
             
+            #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
+            reward_bound = - (bound_dist_sum**2)
+            
             #reward = reward_dist + reward_speed
-            reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
+            #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
+            reward = reward_dist + reward_speed + reward_bound + 1
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
+            print("%-10s" % "bound rew", ': %8.3f'%reward_bound, "%-6s" % "bound", ': %.3f'%bound_dist_sum)
             print("%-10s" % "reward", ': %8.3f'%float(reward))
             print()
             if reward < -0.95:
