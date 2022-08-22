@@ -11,7 +11,7 @@ from airgym.envs.airsim_env import AirSimEnv
 import numpy as np
 from numpy import savetxt
 
-action_file = "action.csv"
+#action_file = "action.csv"
 class AirSimCarEnvContAction(AirSimEnv):
     def __init__(self, ip_address, image_shape):
         super().__init__(image_shape)
@@ -60,22 +60,6 @@ class AirSimCarEnvContAction(AirSimEnv):
         else:
             self.car_controls.throttle = 0
             self.car_controls.brake = 1
-
-        """
-        if action == 0:
-            self.car_controls.throttle = 0
-            self.car_controls.brake = 1
-        elif action == 1:
-            self.car_controls.steering = 0
-        elif action == 2:
-            self.car_controls.steering = 0.5
-        elif action == 3:
-            self.car_controls.steering = -0.5
-        elif action == 4:
-            self.car_controls.steering = 0.25
-        else:
-            self.car_controls.steering = -0.25
-        """
         
         print("action = ", action)
         """
