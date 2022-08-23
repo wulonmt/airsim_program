@@ -172,7 +172,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             print("%-10s" % "bound rew", ': %8.3f'%reward_bound, "%-6s" % "bound", ': %.3f'%bound_dist_sum)
             print("%-10s" % "reward", ': %8.3f'%float(reward))
             print()
-            if reward < -0.95:
+            if reward < -1:
                 done = 1
                 print("Done -- reward < -1\n")
                 
