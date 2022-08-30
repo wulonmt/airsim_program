@@ -150,16 +150,15 @@ class AirSimCarEnvContAction(AirSimEnv):
         MIN_SPEED = 10
         THRESH_DIST = 3.5
         BETA = 3
-        
-        
-        
+        dist = self.mid_line_dist()
+        bound_dist_sum = self.bound_dist()
         done = 0            
         if dist > THRESH_DIST:
             reward = -2
             done = 1
             print("Done -- distance Out\n")
         else:
-            reward_dist = math.exp(-BETA * self.mid_line_dist()) - 0.5
+            reward_dist = math.exp(-BETA * dist) - 0.5
             
             speed = self.car_state.speed
             if speed > MAX_SPEED:
@@ -169,7 +168,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             ) - 0.5
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
-            reward_bound = - (self.bound_dist()**2)
+            reward_bound = - (bound_dist_sum**2)
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
