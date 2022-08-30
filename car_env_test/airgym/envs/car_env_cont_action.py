@@ -103,13 +103,8 @@ class AirSimCarEnvContAction(AirSimEnv):
     def Quaternion_Z_deg(self, x): #x must be Quaternionr in airsim.type
         r = 2*math.acos(x.w_val) #in rad
         return r*180/math.pi #in deg
-
-    def _compute_reward(self):
-        MAX_SPEED = 20 #原先似乎太大
-        MIN_SPEED = 10
-        THRESH_DIST = 3.5
-        BETA = 3
-
+        
+    def mid_line_dist(self):
         pts = [
             np.array([x, y, 0])
             for x, y in [
@@ -129,8 +124,9 @@ class AirSimCarEnvContAction(AirSimEnv):
                 )
                 / np.linalg.norm(pts[i] - pts[i + 1]),
             )
-            
-        #add boundary limit
+        return dist
+        
+    def bound_dist(self):
         bound = [
             np.array([x, y, 0])
             for x, y in [
@@ -138,12 +134,24 @@ class AirSimCarEnvContAction(AirSimEnv):
                 (0, -128),
             ]
         ]
+        car_pt = self.state["pose"].position.to_numpy_array()
         bound_dist_sum = 0
         for i in range(0, len(bound) - 1):
-            bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - pts[i+1])) / np.linalg.norm(pts[i] - pts[i+1]))
+            bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - bound[i+1])) / np.linalg.norm(bound[i] - bound[i+1]))
             
         bound_dist_sum -= (130 + 253)
         bound_dist_sum /= 2
+        
+        return bound_dist_sum
+        
+
+    def _compute_reward(self):
+        MAX_SPEED = 20 #原先似乎太大
+        MIN_SPEED = 10
+        THRESH_DIST = 3.5
+        BETA = 3
+        
+        
         
         done = 0            
         if dist > THRESH_DIST:
@@ -151,7 +159,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             done = 1
             print("Done -- distance Out\n")
         else:
-            reward_dist = math.exp(-BETA * dist) - 0.5
+            reward_dist = math.exp(-BETA * self.mid_line_dist()) - 0.5
             
             speed = self.car_state.speed
             if speed > MAX_SPEED:
@@ -161,18 +169,18 @@ class AirSimCarEnvContAction(AirSimEnv):
             ) - 0.5
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
-            reward_bound = - (bound_dist_sum**2)
+            reward_bound = - (self.bound_dist()**2)
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + reward_speed + reward_bound + 1
+            reward = reward_dist + reward_speed + reward_bound + 1.2
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
             print("%-10s" % "bound rew", ': %8.3f'%reward_bound, "%-6s" % "bound", ': %.3f'%bound_dist_sum)
             print("%-10s" % "reward", ': %8.3f'%float(reward))
             print()
-            if reward < -1:
+            if reward < -0.95:
                 done = 1
                 print("Done -- reward < -1\n")
                 

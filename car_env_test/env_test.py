@@ -28,6 +28,7 @@ if __name__ == "__main__":
             time.sleep(1)
             #print(env.car.getCarState().kinematics_estimated.position.to_numpy_array())
             env._get_obs()
+            print("bound dist: ", env.bound_dist())
             print(env.state["pose"].position.to_numpy_array())
             print_Rad(env)
             
