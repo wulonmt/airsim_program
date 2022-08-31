@@ -73,7 +73,7 @@ class AirSimCarEnvContAction(AirSimEnv):
         
         
         self.car.setCarControls(self.car_controls)
-        time.sleep(1)
+        time.sleep(0.5)
 
     def transform_obs(self, response):
         img1d = np.array(response.image_data_float, dtype=np.float)
