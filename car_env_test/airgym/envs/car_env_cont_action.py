@@ -73,7 +73,7 @@ class AirSimCarEnvContAction(AirSimEnv):
         
         
         self.car.setCarControls(self.car_controls)
-        time.sleep(0.5)
+        time.sleep(0.8)
 
     def transform_obs(self, response):
         img1d = np.array(response.image_data_float, dtype=np.float)
@@ -172,7 +172,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + reward_speed + reward_bound + 1.2
+            reward = reward_dist + 0.7*reward_speed + reward_bound + 1.2
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
