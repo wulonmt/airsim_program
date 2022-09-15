@@ -148,8 +148,9 @@ class AirSimCarEnvContAction(AirSimEnv):
     def _compute_reward(self):
         MAX_SPEED = 10 #原先似乎太大   <-------------------
         MIN_SPEED = 5   #<----------------------
+
         THRESH_DIST = 3.5
-        BETA = 3
+        BETA = 0.5  #<-------------------------
         dist = self.mid_line_dist()
         bound_dist_sum = self.bound_dist()
         done = 0            
@@ -158,7 +159,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             done = 1
             print("Done -- distance Out\n")
         else:
-            reward_dist = math.exp(-BETA * dist) - 0.5
+            reward_dist = math.exp(-((dist / BETA)**2)) - 0.5  #<-------------------------
             
             speed = self.car_state.speed
             if speed > MAX_SPEED:
@@ -173,6 +174,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
             reward = reward_dist + reward_speed + reward_bound + 1.2
+
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
@@ -188,6 +190,7 @@ class AirSimCarEnvContAction(AirSimEnv):
                     done = 1
                     print("Done -- Speedless")
             elif self.state["collision"]:
+                reward = -2
                 print("Done -- collision\n")
                 done = 1
         
