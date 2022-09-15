@@ -2,3 +2,4 @@
 __pycache__/
 /car_env_test/best_model.zip
 /car_env_test/evaluations.npz
+.pyc
