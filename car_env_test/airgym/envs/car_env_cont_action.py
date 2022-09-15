@@ -108,8 +108,8 @@ class AirSimCarEnvContAction(AirSimEnv):
         pts = [
             np.array([x, y, 0])
             for x, y in [
-                (0, -1), (130, -1), (130, 125), (0, 125),
-                (0, -1), (130, -1), (130, -128), (0, -128),
+                (0, -1), (128, -1), (128, 127), (0, 127),          #<------------ modify midline
+                (0, -1), (128, -1), (128, -128), (0, -128),
                 (0, -1),
             ]
         ]
@@ -130,7 +130,7 @@ class AirSimCarEnvContAction(AirSimEnv):
         bound = [
             np.array([x, y, 0])
             for x, y in [
-                (0, -128), (0, 125), (130, 125), (130, -128),
+                (0, -128), (0, 125), (128, 127), (128, -128),   #<------------ modify midline
                 (0, -128),
             ]
         ]
@@ -139,15 +139,15 @@ class AirSimCarEnvContAction(AirSimEnv):
         for i in range(0, len(bound) - 1):
             bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - bound[i+1])) / np.linalg.norm(bound[i] - bound[i+1]))
             
-        bound_dist_sum -= (130 + 253)
+        bound_dist_sum -= (128 + 253)
         bound_dist_sum /= 2
         
         return bound_dist_sum
         
 
     def _compute_reward(self):
-        MAX_SPEED = 20 #原先似乎太大
-        MIN_SPEED = 10
+        MAX_SPEED = 10 #原先似乎太大   <-------------------
+        MIN_SPEED = 5   #<----------------------
         THRESH_DIST = 3.5
         BETA = 3
         dist = self.mid_line_dist()
@@ -172,7 +172,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + 0.7*reward_speed + reward_bound + 1.2
+            reward = reward_dist + reward_speed + reward_bound + 1.2
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
