@@ -130,8 +130,8 @@ class AirSimCarEnvContAction(AirSimEnv):
         bound = [
             np.array([x, y, 0])
             for x, y in [
-                (0, -128), (0, 125), (128, 127), (128, -128),   #<------------ modify midline
-                (0, -128),
+                (-1, -129), (-1, 128), (129, 128), (129, -129),   #<------------ modify midline
+                (-1, -129),
             ]
         ]
         car_pt = self.state["pose"].position.to_numpy_array()
@@ -139,7 +139,7 @@ class AirSimCarEnvContAction(AirSimEnv):
         for i in range(0, len(bound) - 1):
             bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - bound[i+1])) / np.linalg.norm(bound[i] - bound[i+1]))
             
-        bound_dist_sum -= (128 + 253)
+        bound_dist_sum -= (130 + 257)
         bound_dist_sum /= 2
         
         return bound_dist_sum
@@ -150,7 +150,7 @@ class AirSimCarEnvContAction(AirSimEnv):
         MIN_SPEED = 5   #<----------------------
 
         THRESH_DIST = 3.5
-        BETA = 0.5  #<-------------------------
+        BETA = 1  #<-------------------------
         dist = self.mid_line_dist()
         bound_dist_sum = self.bound_dist()
         done = 0            
@@ -159,23 +159,25 @@ class AirSimCarEnvContAction(AirSimEnv):
             done = 1
             print("Done -- distance Out\n")
         else:
-            reward_dist = math.exp(-((dist / BETA)**2)) - 0.5  #<-------------------------
+            reward_dist = math.exp(-((dist * 0.84 / BETA)**2)) - 0.5  #<-------------------------*0.84 因為exp(-0.84^2)=0.5，BETA就能代表reward=0的距離
             
             speed = self.car_state.speed
             if speed > MAX_SPEED:
                 speed = MAX_SPEED
             reward_speed = (
                 (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
-            ) - 0.5
+            )                                                   #<----------------------------------去掉-0.5因為這裡本來就有正負了
+            reward_speed = reward_speed * 0.5                   #<-------------------------------降低速度影響
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
             reward_bound = - (bound_dist_sum**2)
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + reward_speed + reward_bound + 1.2
+            reward = reward_dist + reward_speed + reward_bound
 
             #reward = reward_speed
+            print("position = ",self.state["pose"].position.to_numpy_array())
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
             print("%-10s" % "bound rew", ': %8.3f'%reward_bound, "%-6s" % "bound", ': %.3f'%bound_dist_sum)
