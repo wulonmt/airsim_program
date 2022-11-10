@@ -130,8 +130,8 @@ class AirSimCarEnvContAction(AirSimEnv):
         bound = [
             np.array([x, y, 0])
             for x, y in [
-                (0, -128), (0, 125), (128, 127), (128, -128),   #<------------ modify midline
-                (0, -128),
+                (-1, -129), (-1, 128), (129, 128), (129, -129),   #<------------ modify midline
+                (-1, -129),
             ]
         ]
         car_pt = self.state["pose"].position.to_numpy_array()
@@ -139,7 +139,7 @@ class AirSimCarEnvContAction(AirSimEnv):
         for i in range(0, len(bound) - 1):
             bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - bound[i+1])) / np.linalg.norm(bound[i] - bound[i+1]))
             
-        bound_dist_sum -= (128 + 253)
+        bound_dist_sum -= (130 + 257)
         bound_dist_sum /= 2
         
         return bound_dist_sum
@@ -173,7 +173,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + reward_speed + reward_bound + 1.2
+            reward = reward_dist + reward_speed + reward_bound + 0.8
 
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
@@ -216,7 +216,8 @@ class AirSimCarEnvContAction(AirSimEnv):
 
     def step(self, action):
         self._do_action(action)
-        obs = self._get_obs()
+        obs["img"] = self._get_obs()
+        obs["sp"] = self.car_state.speed
         reward, done = self._compute_reward()
 
         return obs, reward, done, self.state
