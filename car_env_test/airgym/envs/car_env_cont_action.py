@@ -36,6 +36,13 @@ class AirSimCarEnvContAction(AirSimEnv):
         low = np.array([-0.9, 0])
         
         self.action_space = spaces.Box(low , high)
+        
+        #custum observation space
+        print("img shape ", self.image_shape)
+        self.observation_space = spaces.Dict({
+            "img" : spaces.Box(0, 255, shape=self.image_shape, dtype=np.uint8),
+            "sp" : spaces.Box(0, 20, shape = [1])
+        })
 
         self.image_request = airsim.ImageRequest(
             "0", airsim.ImageType.DepthPerspective, True, False
@@ -97,8 +104,12 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.state["pose"] = self.car_state.kinematics_estimated
         self.state["collision"] = self.car.simGetCollisionInfo().has_collided
         self.state["orientation"] = self.car_state.kinematics_estimated.orientation
+        
+        obs = dict()
+        obs["img"] = image
+        obs["sp"] = self.car_state.speed
 
-        return image
+        return obs
         
     def Quaternion_Z_deg(self, x): #x must be Quaternionr in airsim.type
         r = 2*math.acos(x.w_val) #in rad
@@ -173,7 +184,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + reward_speed + reward_bound + 0.8
+            reward = reward_dist + reward_speed*0.5 + reward_bound
 
             #reward = reward_speed
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
@@ -216,8 +227,7 @@ class AirSimCarEnvContAction(AirSimEnv):
 
     def step(self, action):
         self._do_action(action)
-        obs["img"] = self._get_obs()
-        obs["sp"] = self.car_state.speed
+        obs = self._get_obs()
         reward, done = self._compute_reward()
 
         return obs, reward, done, self.state

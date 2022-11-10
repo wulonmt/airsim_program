@@ -41,9 +41,11 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
                 
                 # Compute shape by doing one forward pass
                 with th.no_grad():
-                    n_flatten = extractors[key](th.as_tensor(observation_space.sample()[key]).float()).shape[1]
-                print("n_flatten: ", n_flatten)
-                total_concat_size += n_flatten
+                    ex_shape = extractors[key](th.as_tensor(observation_space.sample()[key]).float())
+                    
+                linear = nn.Sequential(nn.Linear(ex_shape.shape[0] * ex_shape.shape[1], 256, nn.ReLU()))  #256 is img features dim
+                extractors[key] = nn.Sequential(extractors[key], linear)
+                total_concat_size += 256
 
                 #self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
                 
@@ -56,7 +58,6 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 
         # Update the features dim manually
         self._features_dim = total_concat_size
-        print("feature dim: ", self.features_dim)
 
     def forward(self, observations) -> th.Tensor:
         encoded_tensor_list = []
@@ -97,7 +98,7 @@ model = SAC( #action should be continue
     verbose=1,
     batch_size=64,
     train_freq=1,
-    learning_starts=10, #testing origin 1000
+    learning_starts=1000, #testing origin 1000
     buffer_size=200000,
     device="auto",
     tensorboard_log="./tb_logs/",
@@ -118,11 +119,11 @@ callbacks.append(eval_callback)
 
 kwargs = {}
 kwargs["callback"] = callbacks
-
+print(model.policy)
 # Train for a certain number of timesteps
-model.learn(
-    total_timesteps=5e6, tb_log_name="SAC_airsim_car_run_" + str(time.time()), **kwargs
-)
+#model.learn(
+#    total_timesteps=5e6, tb_log_name="SAC_airsim_car_run_" + str(time.time()), **kwargs
+#)
 
 # Save policy weights
-model.save("SAC_airsim_car_policy")
+#model.save("SAC_airsim_car_policy")
