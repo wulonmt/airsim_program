@@ -51,6 +51,8 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.car_controls = airsim.CarControls()
         self.car_state = None
         
+        self.static_count = 0
+        
 
     def _setup_car(self):
         self.car.reset()
@@ -173,19 +175,26 @@ class AirSimCarEnvContAction(AirSimEnv):
             reward_dist = math.exp(-((dist * 0.84 / BETA)**2)) - 0.5  #<-------------------------*0.84 因為exp(-0.84^2)=0.5，BETA就能代表reward=0的距離
             
             speed = self.car_state.speed
+            if speed < 3:
+                self.static_count += 1
+            else:
+                self.static_count = 0
             if speed > MAX_SPEED:
                 speed = MAX_SPEED
             reward_speed = (
                 (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
             )                                                   #<----------------------------------去掉-0.5因為這裡本來就有正負了
-            reward_speed = reward_speed * 0.5                   #<-------------------------------降低速度影響
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
             reward_bound = - (bound_dist_sum**2)
             
             #reward = reward_dist + reward_speed
             #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            reward = reward_dist + reward_speed + reward_bound
+            #reward = reward_dist + reward_speed + reward_bound
+            if reward_dist < 0 or reward_speed < 0:
+                reward = -1 * abs(reward_dist * reward_speed) + reward_bound
+            else:
+                reward = reward_dist * reward_speed + reward_bound
 
 
             #reward = reward_speed
@@ -201,14 +210,20 @@ class AirSimCarEnvContAction(AirSimEnv):
                 print("Done -- collision\n")
                 done = 1
                 
-            elif reward < -0.95:
+            elif reward < -1:
                 done = 1
                 print("Done -- reward < -1\n")
                 
             elif self.car_controls.brake == 0:
                 if self.car_state.speed <= 1:
                     done = 1
-                    print("Done -- Speedless")
+                    print("Done -- Speedless\n")
+            elif self.static_count > 5:
+                reward = -2
+                done = 1
+                print("Done -- Static\n")
+            if done == 1:
+                self.static_count = 0
         
         """
         done = 0
