@@ -8,11 +8,13 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import EvalCallback
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 import flwr as fl
 import numpy as np
 from collections import OrderedDict
-import torch
+import torch as th
+from torch import nn
 
 class CustomCombinedExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Dict):
@@ -73,68 +75,64 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 class AirsimClient(fl.client.NumPyClient):
     def __init__(self):
         # Create a DummyVecEnv for main airsim gym env
-    self.env = DummyVecEnv(
-        [
-            lambda: Monitor(
-                gym.make(
-                    "airgym:airsim-car-cont-action-sample-v0",
-                    ip_address="127.0.0.1",
-                    image_shape=(84, 84, 1),
+        self.env = DummyVecEnv(
+            [
+                lambda: Monitor(
+                    gym.make(
+                        "airgym:airsim-car-cont-action-sample-v0",
+                        ip_address="127.0.0.1",
+                        image_shape=(84, 84, 1),
+                    )
                 )
-            )
-        ]
-    )
+            ]
+        )
 
-    # Wrap env as VecTransposeImage to allow SB to handle frame observations
-    self.env = VecTransposeImage(env)
+        # Wrap env as VecTransposeImage to allow SB to handle frame observations
+        self.env = VecTransposeImage(self.env)
 
-    #Custum Input
-    policy_kwargs = dict(
-        features_extractor_class=CustomCombinedExtractor,
-    )
+        #Custum Input
+        policy_kwargs = dict(
+            features_extractor_class=CustomCombinedExtractor,
+        )
 
-    # Initialize RL algorithm type and parameters
-    model = SAC( #action should be continue
-        "MultiInputPolicy",
-        env,
-        learning_rate=0.0003,
-        policy_kwargs=policy_kwargs,
-        verbose=1,
-        batch_size=64,
-        train_freq=1,
-        learning_starts=1000, #testing origin 1000
-        buffer_size=200000,
-        device="auto",
-        tensorboard_log="./tb_logs/",
-    )
+        # Initialize RL algorithm type and parameters
+        self.model = SAC( #action should be continue
+            "MultiInputPolicy",
+            self.env,
+            learning_rate=0.0003,
+            policy_kwargs=policy_kwargs,
+            verbose=1,
+            batch_size=64,
+            train_freq=1,
+            learning_starts=1000, #testing origin 1000
+            buffer_size=200000,
+            device="auto",
+            tensorboard_log="./tb_logs/",
+        )
 
-    # Create an evaluation callback with the same env, called every 10000 iterations
-    callbacks = []
-    eval_callback = EvalCallback(
-        env,
-        callback_on_new_best=None,
-        n_eval_episodes=5,
-        best_model_save_path=".",
-        log_path=".",
-        eval_freq=10000,
-        verbose = 1
-    )
-    callbacks.append(eval_callback)
+        # Create an evaluation callback with the same env, called every 10000 iterations
+        callbacks = []
+        eval_callback = EvalCallback(
+            self.env,
+            callback_on_new_best=None,
+            n_eval_episodes=5,
+            best_model_save_path=".",
+            log_path=".",
+            eval_freq=10000,
+            verbose = 1
+        )
+        callbacks.append(eval_callback)
 
-    self.callback_kwargs = {}
-    self.callback_kwargs["callback"] = callbacks
+        self.callback_kwargs = {}
+        self.callback_kwargs["callback"] = callbacks
         
     def get_parameters(self, config):
         policy_state = [value.cpu().numpy() for key, value in self.model.policy.state_dict().items()]
-        #print("policy_state: ", policy_state)
-        print("policy_state type: ", type(policy_state))
         return policy_state
 
     def set_parameters(self, parameters):
-        #print("parameters: ", parameters)
-        print("parameters type: ", type(parameters))
         params_dict = zip(self.model.policy.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
+        state_dict = OrderedDict({k: th.tensor(v) for k, v in params_dict})
         self.model.policy.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
