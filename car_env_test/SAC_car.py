@@ -119,11 +119,11 @@ callbacks.append(eval_callback)
 
 kwargs = {}
 kwargs["callback"] = callbacks
-print(model.policy)
+
 # Train for a certain number of timesteps
-#model.learn(
-#    total_timesteps=5e6, tb_log_name="SAC_airsim_car_run_" + str(time.time()), **kwargs
-#)
+model.learn(
+    total_timesteps=5e6, tb_log_name="SAC_airsim_car_run_" + str(time.time()), **kwargs
+)
 
 # Save policy weights
-#model.save("SAC_airsim_car_policy")
+model.save("SAC_airsim_car_policy")
