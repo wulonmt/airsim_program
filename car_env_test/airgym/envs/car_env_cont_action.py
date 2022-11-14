@@ -177,7 +177,6 @@ class AirSimCarEnvContAction(AirSimEnv):
             np.array([x, y, 0])
             for x, y in bound_track
         ]
-        print(self.track[self.track_num][1])
         car_pt = self.state["pose"].position.to_numpy_array()
         bound_dist_sum = 0
         for i in range(0, len(bound) - 1):

@@ -80,8 +80,7 @@ env = gym.make(
                 ip_address="127.0.0.1",
                 image_shape=(84, 84, 1),
             )
-set_kwargs = {"track" : args.track}
-env.env.setkwargs(set_kwargs)
+env.env.setkwargs(track = args.track)
 env = DummyVecEnv(
     [
         lambda: Monitor(
