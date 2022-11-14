@@ -12,6 +12,12 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import EvalCallback
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=int)
+args = parser.parse_args()
+
 class CustomCombinedExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Dict):
         # We do not know features-dim here before going over all the items,
@@ -69,14 +75,17 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         return th.cat(encoded_tensor_list, dim=1)
 
 # Create a DummyVecEnv for main airsim gym env
-env = DummyVecEnv(
-    [
-        lambda: Monitor(
-            gym.make(
+env = gym.make(
                 "airgym:airsim-car-cont-action-sample-v0",
                 ip_address="127.0.0.1",
                 image_shape=(84, 84, 1),
             )
+set_kwargs = {"track" : args.track}
+env.env.setkwargs(set_kwargs)
+env = DummyVecEnv(
+    [
+        lambda: Monitor(
+            env
         )
     ]
 )

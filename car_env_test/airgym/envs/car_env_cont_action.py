@@ -11,6 +11,41 @@ from airgym.envs.airsim_env import AirSimEnv
 import numpy as np
 from numpy import savetxt
 
+"""
+X=0,Y=0,Z=0,Yaw=0
+"""
+track0 = [
+                (0, -1), (128, -1), (128, -128), (0, -128),
+                (0, -1),
+            ]
+bound0 = [
+                (-2, 1), (130, 1), (130, -130), (-2, -130),
+                (-2, 1),
+            ]
+            
+"""
+X=0,Y=0,Z=0,Yaw=180
+"""
+track1 = [
+                (0, -1), (-127, -1), (-127, -128), (0, -128),
+                (0, -1),
+            ]
+bound1 = [
+                (2, 1), (-129, 1), (-129, -130), (2, -130),
+                (2, 1),
+            ]
+"""
+X=0,Y=0,Z=0,Yaw=0
+"""
+track2 = [
+                (0, -1), (-128, -1), (-128, -128), (0, -128),
+                (0, -1),
+            ]
+bound2 = [
+                (-2, 1), (130, 1), (130, -130), (-2, -130),
+                (-2, 1),
+            ]
+
 #action_file = "action.csv"
 class AirSimCarEnvContAction(AirSimEnv):
     def __init__(self, ip_address, image_shape):
@@ -52,48 +87,8 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.car_state = None
         
         self.static_count = 0
-        """"
-        "Vehicles": {
-            "Car1": {
-              "VehicleType": "PhysXCar",
-              "X": 0, "Y": 0, "Z": 0,
-              "Yaw": 0
-                }
-            }
-        """"
-        trace1 = [
-                (0, -1), (128, -1), (128, -128), (0, -128),
-                (0, -1),
-            ]
-        bound1 = [
-                (-2, 1), (130, 1), (130, -130), (-2, -130),
-                (-2, 1),
-            ]
-        """"
-        "Vehicles": {
-            "Car1": {
-              "VehicleType": "PhysXCar",
-              "X": 0, "Y": 0, "Z": 0,
-              "Yaw": 180
-                }
-            }
-        """"
-        trace2 = [
-                (0, -1), (-127, -1), (-127, -128), (0, -128),
-                (0, -1),
-            ]
-        bound2 = [
-                (2, 1), (-129, 1), (-129, -130), (2, -130),
-                (2, 1),
-            ]
-        trace3 = [
-                (0, -1), (-128, -1), (-128, -128), (0, -128),
-                (0, -1),
-            ]
-        bound3 = [
-                (-2, 1), (130, 1), (130, -130), (-2, -130),
-                (-2, 1),
-            ]
+        
+        self.track = [(track0, bound0), (track1, bound1), (track2, bound2)]
 
     def _setup_car(self):
         self.car.reset()
@@ -161,11 +156,7 @@ class AirSimCarEnvContAction(AirSimEnv):
     def mid_line_dist(self):
         pts = [
             np.array([x, y, 0])
-            for x, y in [
-                (0, -1), (128, -1), (128, 127), (0, 127),          #<------------ modify midline
-                (0, -1), (128, -1), (128, -128), (0, -128),
-                (0, -1),
-            ]
+            for x, y in self.track[self.track_num][0]
         ]
         car_pt = self.state["pose"].position.to_numpy_array()
 
@@ -181,21 +172,20 @@ class AirSimCarEnvContAction(AirSimEnv):
         return dist
         
     def bound_dist(self):
+        bound_track = self.track[self.track_num][1]
         bound = [
             np.array([x, y, 0])
-            for x, y in [
-                (-1, -129), (-1, 128), (129, 128), (129, -129),   #<------------ modify midline
-                (-1, -129),
-            ]
+            for x, y in bound_track
         ]
+        print(self.track[self.track_num][1])
         car_pt = self.state["pose"].position.to_numpy_array()
         bound_dist_sum = 0
         for i in range(0, len(bound) - 1):
             bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - bound[i+1])) / np.linalg.norm(bound[i] - bound[i+1]))
             
-        bound_dist_sum -= (130 + 257)
+        bound_dist_sum -= (np.linalg.norm(bound[0] - bound[1]) + np.linalg.norm(bound[1] - bound[2]))
         bound_dist_sum /= 2
-        
+            
         return bound_dist_sum
         
 
@@ -295,3 +285,6 @@ class AirSimCarEnvContAction(AirSimEnv):
         self._setup_car()
         self._do_action([0, 0.5])
         return self._get_obs()
+    
+    def setkwargs(self, **kwargs):
+        self.track_num = kwargs['track']

@@ -1,0 +1,20 @@
+{
+  "SettingsVersion": 1.2,
+  "SimMode": "Car",
+  "Vehicles": {
+            "Car1": {
+              "VehicleType": "PhysXCar",
+              "X": 0, "Y": 0, "Z": 0,
+              "Yaw": 180
+                }
+            },
+   "Recording": {
+    "RecordOnMove": false,
+    "RecordInterval": 0.05,
+    "Folder": "",
+    "Enabled": false,
+    "Cameras": [
+        { "CameraName": "1", "ImageType": 0, "PixelsAsFloat": false,  "VehicleName": "", "Compress": true }
+    ]
+  }
+}
