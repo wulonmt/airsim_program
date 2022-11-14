@@ -16,6 +16,12 @@ from collections import OrderedDict
 import torch as th
 from torch import nn
 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=int)
+args = parser.parse_args()
+
 class CustomCombinedExtractor(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Dict):
         # We do not know features-dim here before going over all the items,
@@ -75,14 +81,16 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 class AirsimClient(fl.client.NumPyClient):
     def __init__(self):
         # Create a DummyVecEnv for main airsim gym env
-        self.env = DummyVecEnv(
-            [
-                lambda: Monitor(
-                    gym.make(
+        env = gym.make(
                         "airgym:airsim-car-cont-action-sample-v0",
                         ip_address="127.0.0.1",
                         image_shape=(84, 84, 1),
                     )
+        env.env.setkwargs(track = args.track)
+        env = DummyVecEnv(
+            [
+                lambda: Monitor(
+                    env
                 )
             ]
         )
@@ -137,7 +145,7 @@ class AirsimClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        self.model.learn(total_timesteps=3e4, **self.callback_kwargs)
+        self.model.learn(total_timesteps=2e4, **self.callback_kwargs)
         return self.get_parameters(config={}), self.model.buffer_size, {}
 
     def evaluate(self, parameters, config):
@@ -148,7 +156,7 @@ class AirsimClient(fl.client.NumPyClient):
 def main():        
     # Start Flower client
     fl.client.start_numpy_client(
-        server_address="127.0.0.1:8080",
+        server_address="192.168.1.85:8080",
         client=AirsimClient(),
     )
 if __name__ == "__main__":
