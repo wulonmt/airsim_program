@@ -52,7 +52,48 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.car_state = None
         
         self.static_count = 0
-        
+        """"
+        "Vehicles": {
+            "Car1": {
+              "VehicleType": "PhysXCar",
+              "X": 0, "Y": 0, "Z": 0,
+              "Yaw": 0
+                }
+            }
+        """"
+        trace1 = [
+                (0, -1), (128, -1), (128, -128), (0, -128),
+                (0, -1),
+            ]
+        bound1 = [
+                (-2, 1), (130, 1), (130, -130), (-2, -130),
+                (-2, 1),
+            ]
+        """"
+        "Vehicles": {
+            "Car1": {
+              "VehicleType": "PhysXCar",
+              "X": 0, "Y": 0, "Z": 0,
+              "Yaw": 180
+                }
+            }
+        """"
+        trace2 = [
+                (0, -1), (-127, -1), (-127, -128), (0, -128),
+                (0, -1),
+            ]
+        bound2 = [
+                (2, 1), (-129, 1), (-129, -130), (2, -130),
+                (2, 1),
+            ]
+        trace3 = [
+                (0, -1), (-128, -1), (-128, -128), (0, -128),
+                (0, -1),
+            ]
+        bound3 = [
+                (-2, 1), (130, 1), (130, -130), (-2, -130),
+                (-2, 1),
+            ]
 
     def _setup_car(self):
         self.car.reset()
