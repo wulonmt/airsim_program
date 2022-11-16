@@ -4,7 +4,7 @@ import flwr as fl
 from flwr.common import Metrics
 
 # Define strategy
-strategy = fl.server.strategy.FedAvg(min_fit_clients=2,
+strategy = fl.server.strategy.FedAdam(min_fit_clients=2,
                                     min_evaluate_clients=2,
                                     min_available_clients=2,
                                     )
