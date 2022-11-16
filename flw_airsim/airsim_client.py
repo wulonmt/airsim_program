@@ -81,16 +81,16 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
 class AirsimClient(fl.client.NumPyClient):
     def __init__(self):
         # Create a DummyVecEnv for main airsim gym env
-        env = gym.make(
+        self.env = gym.make(
                         "airgym:airsim-car-cont-action-sample-v0",
                         ip_address="127.0.0.1",
                         image_shape=(84, 84, 1),
                     )
-        env.env.setkwargs(track = args.track)
-        env = DummyVecEnv(
+        self.env.env.setkwargs(track = args.track)
+        self.env = DummyVecEnv(
             [
                 lambda: Monitor(
-                    env
+                    self.env
                 )
             ]
         )
@@ -133,6 +133,9 @@ class AirsimClient(fl.client.NumPyClient):
 
         self.callback_kwargs = {}
         self.callback_kwargs["callback"] = callbacks
+        self.time = str(time.ctime())
+        self.time = self.time.replace(" ", "_")
+        self.n_round = int(0)
         
     def get_parameters(self, config):
         policy_state = [value.cpu().numpy() for key, value in self.model.policy.state_dict().items()]
@@ -144,8 +147,9 @@ class AirsimClient(fl.client.NumPyClient):
         self.model.policy.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
+        self.n_round += 1
         self.set_parameters(parameters)
-        self.model.learn(total_timesteps=2e4, **self.callback_kwargs)
+        self.model.learn(total_timesteps=100, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, **self.callback_kwargs)
         return self.get_parameters(config={}), self.model.buffer_size, {}
 
     def evaluate(self, parameters, config):
