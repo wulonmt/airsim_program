@@ -135,7 +135,8 @@ class AirsimClient(fl.client.NumPyClient):
         self.callback_kwargs["callback"] = callbacks
         #make time eazier to read
         Ttime = str(time.ctime())
-        Ttime = Ttime.split(" ").reverse()
+        Ttime = Ttime.split(" ")
+        Ttime.reverse()
         self.time =  ""
         for t in Ttime:
             self.time += (t + "_")
