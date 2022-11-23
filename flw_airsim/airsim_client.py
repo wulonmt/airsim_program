@@ -133,8 +133,13 @@ class AirsimClient(fl.client.NumPyClient):
 
         self.callback_kwargs = {}
         self.callback_kwargs["callback"] = callbacks
-        self.time = str(time.ctime())
-        self.time = self.time.replace(" ", "_")
+        #make time eazier to read
+        Ttime = str(time.ctime())
+        Ttime = Ttime.split(" ").reverse()
+        self.time =  ""
+        for t in Ttime:
+            self.time += (t + "_")
+        print("Start time: ", self.time)
         self.n_round = int(0)
         
     def get_parameters(self, config):
@@ -149,13 +154,13 @@ class AirsimClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.n_round += 1
         self.set_parameters(parameters)
-        self.model.learn(total_timesteps=2e4, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, **self.callback_kwargs)
+        self.model.learn(total_timesteps=2e3, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, **self.callback_kwargs)
         return self.get_parameters(config={}), self.model.buffer_size, {}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
         reward_mean, reward_std = evaluate_policy(self.model, self.env)
-        return 1/reward_mean, self.model.buffer_size, {"reward mean": reward_mean, "reward std": reward_std} 
+        return -reward_mean, self.model.buffer_size, {"reward mean": reward_mean, "reward std": reward_std} 
 
 def main():        
     # Start Flower client
