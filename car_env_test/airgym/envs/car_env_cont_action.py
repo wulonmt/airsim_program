@@ -71,13 +71,6 @@ class AirSimCarEnvContAction(AirSimEnv):
         low = np.array([-0.9, 0])
         
         self.action_space = spaces.Box(low , high)
-        
-        #custum observation space
-        print("img shape ", self.image_shape)
-        self.observation_space = spaces.Dict({
-            "img" : spaces.Box(0, 255, shape=self.image_shape, dtype=np.uint8),
-            "sp" : spaces.Box(0, 20, shape = [1])
-        })
 
         self.image_request = airsim.ImageRequest(
             "0", airsim.ImageType.DepthPerspective, True, False
@@ -142,12 +135,8 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.state["pose"] = self.car_state.kinematics_estimated
         self.state["collision"] = self.car.simGetCollisionInfo().has_collided
         self.state["orientation"] = self.car_state.kinematics_estimated.orientation
-        
-        obs = dict()
-        obs["img"] = image
-        obs["sp"] = self.car_state.speed
 
-        return obs
+        return image
         
     def Quaternion_Z_deg(self, x): #x must be Quaternionr in airsim.type
         r = 2*math.acos(x.w_val) #in rad
@@ -190,7 +179,7 @@ class AirSimCarEnvContAction(AirSimEnv):
 
     def _compute_reward(self):
         MAX_SPEED = 10 #原先似乎太大   <-------------------
-        MIN_SPEED = 5   #<----------------------
+        MIN_SPEED = 0   #<----------------------
 
         THRESH_DIST = 3.5
         BETA = 1  #<-------------------------
@@ -209,25 +198,18 @@ class AirSimCarEnvContAction(AirSimEnv):
                 self.static_count += 1
             else:
                 self.static_count = 0
+            
             if speed > MAX_SPEED:
                 speed = MAX_SPEED
             reward_speed = (
                 (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
-            )                                                   #<----------------------------------去掉-0.5因為這裡本來就有正負了
+            )
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
             reward_bound = - (bound_dist_sum**2)
             
-            #reward = reward_dist + reward_speed
-            #reward = reward_dist + reward_speed + 1 #因為很多reward都小於0所以+1看看
-            #reward = reward_dist + reward_speed + reward_bound
-            if reward_dist < 0 or reward_speed < 0:
-                reward = -1 * abs(reward_dist * reward_speed) + reward_bound
-            else:
-                reward = reward_dist * reward_speed + reward_bound
+            reward = reward_dist * reward_speed + reward_bound
 
-
-            #reward = reward_speed
             print("position = ",self.state["pose"].position.to_numpy_array())
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
             print("%-10s" % "speed rew", ': %8.3f'%reward_speed, "%-6s" % "speed", ': %.3f'%self.car_state.speed)
@@ -239,11 +221,6 @@ class AirSimCarEnvContAction(AirSimEnv):
                 reward = -2
                 print("Done -- collision\n")
                 done = 1
-                
-            elif reward < -1:
-                done = 1
-                print("Done -- reward < -1\n")
-                
             elif self.car_controls.brake == 0:
                 if self.car_state.speed <= 1:
                     done = 1
@@ -252,24 +229,11 @@ class AirSimCarEnvContAction(AirSimEnv):
                 reward = -2
                 done = 1
                 print("Done -- Static\n")
+            
+            #reset static count
             if done == 1:
                 self.static_count = 0
-        
-        """
-        done = 0
-        if reward < -1:
-            done = 1
-            print("done -- reward < -1\n")
-            
-        if self.car_controls.brake == 0:
-            if self.car_state.speed <= 1:
-                done = 1
-                
-        if self.state["collision"]:
-            print("done -- collision\n")
-            reward = -3
-            done = 1
-        """
+
 
         return reward, done
 
