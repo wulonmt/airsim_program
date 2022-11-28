@@ -75,11 +75,10 @@ kwargs["callback"] = callbacks
 #make time eazier to read
 Ttime = str(time.ctime())
 Ttime = Ttime.split(" ")
-Ttime.reverse()
 time =  ""
-mask = [5, 3, 2, 1, 4]
+mask = [4, 1, 2, 0, 3]
 for i in mask:
-    time += Ttime[i-1] + "_"
+    time += Ttime[i] + "_"
 print("Start time: ", time)
 
 # Train for a certain number of timesteps
