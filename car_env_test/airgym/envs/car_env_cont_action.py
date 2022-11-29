@@ -120,6 +120,8 @@ class AirSimCarEnvContAction(AirSimEnv):
 
         from PIL import Image
 
+        print(type(img2d))
+        print("img2d size", img2d.shape)
         image = Image.fromarray(img2d)
         im_final = np.array(image.resize((84, 84)).convert("L"))
 
@@ -187,11 +189,11 @@ class AirSimCarEnvContAction(AirSimEnv):
         bound_dist_sum = self.bound_dist()
         done = 0            
         if dist > THRESH_DIST:
-            reward = -2
+            reward = -1
             done = 1
             print("Done -- distance Out\n")
         else:
-            reward_dist = math.exp(-((dist * 0.84 / BETA)**2)) - 0.5  #<-------------------------*0.84 因為exp(-0.84^2)=0.5，BETA就能代表reward=0的距離
+            reward_dist = math.exp(-((dist * 0.84 / BETA)**2))  #<-------------------------*0.84 因為exp(-0.84^2)=0.5，BETA就能代表reward=0的距離
             
             speed = self.car_state.speed
             if speed < 3:
@@ -208,7 +210,8 @@ class AirSimCarEnvContAction(AirSimEnv):
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
             reward_bound = - (bound_dist_sum**2)
             
-            reward = reward_dist * reward_speed + reward_bound
+            #reward = reward_dist * reward_speed + reward_bound
+            reward = reward_dist * reward_speed
 
             print("position = ",self.state["pose"].position.to_numpy_array())
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
@@ -226,7 +229,7 @@ class AirSimCarEnvContAction(AirSimEnv):
                     done = 1
                     print("Done -- Speedless\n")
             elif self.static_count > 5:
-                reward = -2
+                reward = -1
                 done = 1
                 print("Done -- Static\n")
             
