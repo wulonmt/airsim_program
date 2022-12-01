@@ -8,13 +8,12 @@
               "Yaw": 180
                 }
             },
-   "Recording": {
-    "RecordOnMove": false,
-    "RecordInterval": 0.05,
-    "Folder": "",
-    "Enabled": false,
-    "Cameras": [
-        { "CameraName": "1", "ImageType": 0, "PixelsAsFloat": false,  "VehicleName": "", "Compress": true }
-    ]
-  }
+  "UnrealEngine": {
+        "PixelFormatOverride": [
+            {
+                "ImageType": 0,
+                "PixelFormat": 10
+            }
+        ]
+    }
 }
