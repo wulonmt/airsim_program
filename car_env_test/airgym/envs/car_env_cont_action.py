@@ -153,13 +153,26 @@ class AirSimCarEnvContAction(AirSimEnv):
 
         dist = 10000000
         for i in range(0, len(pts) - 1):
-            dist = min(
-                dist,
-                np.linalg.norm(
-                    np.cross((car_pt - pts[i]), (car_pt - pts[i + 1]))
+            #wheather the car_pt projection is between the pts or not
+            segment = np.linalg.norm(pts[i] - pts[i + 1])
+            project1 = np.linalg.norm(np.dot(car_pt - pts[i], (pts[i + 1] - pts[i]))) / segment
+            project2 = np.linalg.norm(np.dot(car_pt - pts[i + 1], (pts[i] - pts[i + 1]))) /  segment
+            if project1 > segment :
+                dist = min(
+                    dist,
+                    np.linalg.norm(car_pt - pts[i + 1])
+            elif project2 > segment:
+                dist = min(
+                    dist,
+                    np.linalg.norm(car_pt - pts[i])
+            else:
+                dist = min(
+                    dist,
+                    np.linalg.norm(
+                        np.cross((car_pt - pts[i]), (car_pt - pts[i + 1]))
+                    )
+                    / segment,
                 )
-                / np.linalg.norm(pts[i] - pts[i + 1]),
-            )
         return dist
         
     def bound_dist(self):
