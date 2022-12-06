@@ -17,7 +17,7 @@ from stable_baselines3.common.vec_env import VecFrameStack
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=int)
+parser.add_argument("-t", "--track", help="Which track will be used, 0~2", type=int)
 args = parser.parse_args()
 
 # Create a DummyVecEnv for main airsim gym env
@@ -74,12 +74,16 @@ kwargs["callback"] = callbacks
 
 #make time eazier to read
 Ttime = str(time.ctime())
-Ttime = Ttime.split(" ")
-time =  ""
+print("Ttime: ", Ttime)
+Ttime = Ttime.split(' ')
+if '' in Ttime:
+    Ttime.remove('')
+print("Ttime: ", Ttime)
+t =  ""
 mask = [4, 1, 2, 0, 3]
 for i in mask:
-    time += Ttime[i] + "_"
-print("Start time: ", time)
+    t += Ttime[i] + "_"
+print("Start time: ", t)
 
 # Train for a certain number of timesteps
 model.learn(

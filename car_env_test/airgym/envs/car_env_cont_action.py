@@ -160,11 +160,11 @@ class AirSimCarEnvContAction(AirSimEnv):
             if project1 > segment :
                 dist = min(
                     dist,
-                    np.linalg.norm(car_pt - pts[i + 1])
+                    np.linalg.norm(car_pt - pts[i + 1]))
             elif project2 > segment:
                 dist = min(
                     dist,
-                    np.linalg.norm(car_pt - pts[i])
+                    np.linalg.norm(car_pt - pts[i]))
             else:
                 dist = min(
                     dist,
