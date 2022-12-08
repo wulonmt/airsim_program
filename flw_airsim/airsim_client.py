@@ -155,7 +155,7 @@ class AirsimClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.n_round += 1
         self.set_parameters(parameters)
-        self.model.learn(total_timesteps=2e3, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, **self.callback_kwargs)
+        self.model.learn(total_timesteps=2e4, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, **self.callback_kwargs)
         return self.get_parameters(config={}), self.model.buffer_size, {}
 
     def evaluate(self, parameters, config):
