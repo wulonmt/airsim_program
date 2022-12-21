@@ -72,9 +72,13 @@ class AirSimCarEnvContAction(AirSimEnv):
         
         self.action_space = spaces.Box(low , high)
 
+        #self.image_request = airsim.ImageRequest(
+        #    "0", airsim.ImageType.DepthPerspective, True, False
+        #)
         self.image_request = airsim.ImageRequest(
-            "0", airsim.ImageType.DepthPerspective, True, False
+            "0", airsim.ImageType.Scene, False, False
         )
+        #CameraID, Data type, pixels as float or not, compressed or not
 
         self.car_controls = airsim.CarControls()
         self.car_state = None
@@ -114,9 +118,14 @@ class AirSimCarEnvContAction(AirSimEnv):
         time.sleep(0.8)
 
     def transform_obs(self, response):
-        img1d = np.array(response.image_data_float, dtype=np.float)
-        img1d = 255 / np.maximum(np.ones(img1d.size), img1d)
-        img2d = np.reshape(img1d, (response.height, response.width))
+        #img1d = np.array(response.image_data_float, dtype=np.float)
+        img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8) #Using Scene
+        #img1d = 255 / np.maximum(np.ones(img1d.size), img1d)
+        #img2d = np.reshape(img1d, (response.height, response.width))
+        img2d = img1d.reshape(response.height, response.width, 3)
+        # original image is fliped vertically
+        #img2d = np.flipud(img2d)
+
 
         from PIL import Image
 
@@ -234,21 +243,17 @@ class AirSimCarEnvContAction(AirSimEnv):
             print()
             
             if self.state["collision"]:
-                reward = -2
+                reward = -1
                 print("Done -- collision\n")
                 done = 1
-            elif self.car_controls.brake == 0:
-                if self.car_state.speed <= 1:
-                    done = 1
-                    print("Done -- Speedless\n")
             elif self.static_count > 5:
                 reward = -1
                 done = 1
                 print("Done -- Static\n")
             
-            #reset static count
-            if done == 1:
-                self.static_count = 0
+        #reset static count
+        if done == 1:
+            self.static_count = 0
 
 
         return reward, done
