@@ -36,10 +36,19 @@ class EpisodeCheckpointCallback(BaseCallback):
         """
         return os.path.join(self.save_path, f"{self.name_prefix}_{checkpoint_type}{self.num_timesteps}_steps.{extension}")
         
+    def clean_path(self):
+        if len(os.listdir(self.save_path)) > 0:
+            print("save path not empty")
+            for files in os.listdir(self.save_path):
+                os.remove(self.save_path + files)
+        else:
+            print("save path is already empty")
+        
     def _init_callback(self) -> None:
         # Create folder if needed
         if self.save_path is not None:
             os.makedirs(self.save_path, exist_ok=True)
+        self.clean_path()
 
     def _on_step(self) -> bool:
         # Check that the `dones` local variable is defined
@@ -54,6 +63,7 @@ class EpisodeCheckpointCallback(BaseCallback):
                 to_save = True
 
         if self.verbose >= 1 and to_save:
+            self.clean_path()
             model_path = self._checkpoint_path(extension="zip")
             self.model.save(model_path)
             if self.verbose >= 2:
