@@ -4,5 +4,4 @@ echo "Stating Environment"
 -windowed -ResX=1024 -ResY=576 -NoVSync \
 -settings="/home/wulonmt/Desktop/project/program/airsim_program/car_env_test/settings.json"
 
-
 exit 0

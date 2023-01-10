@@ -71,7 +71,7 @@ callback_list.append(eval_callback)
 
 # Save a checkpoint every 1000 steps
 ep_checkpoint_callback = EpisodeCheckpointCallback(
-  check_episodes=5,
+  check_episodes=1e3,
   save_path="./checkpoint/",
   name_prefix="rl_model",
   save_replay_buffer=True,
