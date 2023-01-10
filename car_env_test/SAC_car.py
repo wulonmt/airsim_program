@@ -88,11 +88,11 @@ callback = CallbackList(callback_list)
 
 #make time eazier to read
 Ttime = str(time.ctime())
-print("Ttime: ", Ttime)
 Ttime = Ttime.split(' ')
 if '' in Ttime:
     Ttime.remove('')
-print("Ttime: ", Ttime)
+if(int(Ttime[2]) < 10):
+    Ttime[2] = "0" + Ttime[2]
 t =  ""
 mask = [4, 1, 2, 0, 3]
 for i in mask:
