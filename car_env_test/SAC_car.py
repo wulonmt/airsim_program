@@ -91,6 +91,8 @@ Ttime = str(time.ctime())
 Ttime = Ttime.split(' ')
 if '' in Ttime:
     Ttime.remove('')
+if(int(Ttime[2]) < 10):
+    Ttime[2] = "0" + Ttime[2]
 t =  ""
 mask = [4, 1, 2, 0, 3]
 for i in mask:
