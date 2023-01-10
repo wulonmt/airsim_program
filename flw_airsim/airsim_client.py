@@ -22,62 +22,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=int)
 args = parser.parse_args()
 
-class CustomCombinedExtractor(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.spaces.Dict):
-        # We do not know features-dim here before going over all the items,
-        # so put something dummy for now. PyTorch requires calling
-        # nn.Module.__init__ before adding modules
-        super(CustomCombinedExtractor, self).__init__(observation_space, features_dim=1)
-
-        extractors = {}
-
-        total_concat_size = 0
-        # We need to know size of the output of this extractor,
-        # so go over all the spaces and compute output feature sizes
-        for key, subspace in observation_space.spaces.items():
-            if key == "img":
-                # We assume CxHxW images (channels first)
-                # Re-ordering will be done by pre-preprocessing or wrapper
-                n_input_channels = subspace.shape[0]
-                extractors[key] = nn.Sequential(
-                    nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-                    nn.ReLU(),
-                    nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-                    nn.ReLU(),
-                    nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
-                    nn.ReLU(),
-                    nn.Flatten(),
-                )
-                
-                # Compute shape by doing one forward pass
-                with th.no_grad():
-                    ex_shape = extractors[key](th.as_tensor(observation_space.sample()[key]).float())
-                    
-                linear = nn.Sequential(nn.Linear(ex_shape.shape[0] * ex_shape.shape[1], 256, nn.ReLU()))  #256 is img features dim
-                extractors[key] = nn.Sequential(extractors[key], linear)
-                total_concat_size += 256
-
-                #self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
-                
-            elif key == "sp":
-                # Run through a simple MLP
-                extractors[key] = nn.Linear(subspace.shape[0], 16)
-                total_concat_size += 16
-
-        self.extractors = nn.ModuleDict(extractors)
-
-        # Update the features dim manually
-        self._features_dim = total_concat_size
-
-    def forward(self, observations) -> th.Tensor:
-        encoded_tensor_list = []
-
-        # self.extractors contain nn.Modules that do all the processing.
-        for key, extractor in self.extractors.items():
-            encoded_tensor_list.append(extractor(observations[key]))
-        # Return a (B, self._features_dim) PyTorch tensor, where B is batch dimension.
-        return th.cat(encoded_tensor_list, dim=1)
-
 class AirsimClient(fl.client.NumPyClient):
     def __init__(self):
         # Create a DummyVecEnv for main airsim gym env
@@ -105,10 +49,9 @@ class AirsimClient(fl.client.NumPyClient):
 
         # Initialize RL algorithm type and parameters
         self.model = SAC( #action should be continue
-            "MultiInputPolicy",
+            "CnnPolicy",
             self.env,
             learning_rate=0.0003,
-            policy_kwargs=policy_kwargs,
             verbose=1,
             batch_size=64,
             train_freq=1,
@@ -130,9 +73,37 @@ class AirsimClient(fl.client.NumPyClient):
             verbose = 1
         )
         callbacks.append(eval_callback)
+        
+        # Create an evaluation callback with the same env, called every 10000 iterations
+        callback_list = []
+        eval_callback = EvalCallback(
+            env,
+            callback_on_new_best=None,
+            n_eval_episodes=5,
+            best_model_save_path=".",
+            log_path=".",
+            eval_freq=10000,
+            verbose = 1
+        )
+        callback_list.append(eval_callback)
 
-        self.callback_kwargs = {}
-        self.callback_kwargs["callback"] = callbacks
+        # Save a checkpoint every 1000 steps
+        ep_checkpoint_callback = EpisodeCheckpointCallback(
+          check_episodes=1e3,
+          save_path="./checkpoint/",
+          name_prefix="rl_model",
+          save_replay_buffer=True,
+          save_vecnormalize=True,
+          verbose=2
+        )
+        #callback_list.append(ep_checkpoint_callback)
+
+        # Stops training when the model reaches the maximum number of episodes
+        callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=1e3, verbose=1)
+        callback_list.append(callback_max_episodes)
+
+        self.callback = CallbackList(callback_list)
+
         #make time eazier to read
         Ttime = str(time.ctime())
         Ttime = Ttime.split(" ")
@@ -155,7 +126,7 @@ class AirsimClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.n_round += 1
         self.set_parameters(parameters)
-        self.model.learn(total_timesteps=2e4, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, **self.callback_kwargs)
+        self.model.learn(total_timesteps=2e4, tb_log_name=self.time + f"/SAC_airsim_car_round_{self.n_round}", reset_num_timesteps=False, callback = self.callback)
         return self.get_parameters(config={}), self.model.buffer_size, {}
 
     def evaluate(self, parameters, config):

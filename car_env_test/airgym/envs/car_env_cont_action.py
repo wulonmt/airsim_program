@@ -86,6 +86,18 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.static_count = 0
         
         self.track = [(track0, bound0), (track1, bound1), (track2, bound2)]
+        
+        DamnAnimals = [] #Forgive me for cursing the animals which always breaks my training
+        print("Animals: ")
+        for objects in self.car.simListSceneObjects():
+            if "Raccoon" in objects or "Deer" in objects:
+                print(objects)
+                DamnAnimals.append(objects)
+                
+        for animals in DamnAnimals:
+            self.car.simDestroyObject(animals)
+            time.sleep(0.05)
+        print("Animals Cleaned Over.")
 
     def _setup_car(self):
         self.car.reset()

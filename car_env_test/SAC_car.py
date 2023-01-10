@@ -71,7 +71,7 @@ callback_list.append(eval_callback)
 
 # Save a checkpoint every 1000 steps
 ep_checkpoint_callback = EpisodeCheckpointCallback(
-  check_episodes=5,
+  check_episodes=1e3,
   save_path="./checkpoint/",
   name_prefix="rl_model",
   save_replay_buffer=True,
@@ -88,11 +88,11 @@ callback = CallbackList(callback_list)
 
 #make time eazier to read
 Ttime = str(time.ctime())
-print("Ttime: ", Ttime)
 Ttime = Ttime.split(' ')
 if '' in Ttime:
     Ttime.remove('')
-print("Ttime: ", Ttime)
+if(int(Ttime[2]) < 10):
+    Ttime[2] = "0" + Ttime[2]
 t =  ""
 mask = [4, 1, 2, 0, 3]
 for i in mask:
