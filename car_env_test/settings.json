@@ -1,6 +1,8 @@
 {
   "SettingsVersion": 1.2,
   "SimMode": "Car",
+  "ViewMode": "NoDisplay",
+  "EngineSound": false,
   "Vehicles": {
             "Car1": {
               "VehicleType": "PhysXCar",
