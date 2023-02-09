@@ -18,7 +18,8 @@ from EpisodeCheckpointCallback import EpisodeCheckpointCallback
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-t", "--track", help="Which track will be used, 0~2", type=int)
+parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=int)
+parser.add_argument("-l", "--log_name", help="modified log name", type=str, nargs='?')
 args = parser.parse_args()
 
 # Create a DummyVecEnv for main airsim gym env
@@ -50,7 +51,7 @@ model = SAC( #action should be continue
     verbose=1,
     batch_size=64,
     train_freq=1,
-    learning_starts=1000, #testing origin 1000
+    learning_starts=50, #testing origin 1000
     buffer_size=200000,
     device="auto",
     tensorboard_log="./tb_logs/",
@@ -78,13 +79,13 @@ ep_checkpoint_callback = EpisodeCheckpointCallback(
   save_vecnormalize=True,
   verbose=2
 )
-callback_list.append(ep_checkpoint_callback)
+#callback_list.append(ep_checkpoint_callback)
 
 # Stops training when the model reaches the maximum number of episodes
 callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=1e4, verbose=1)
 callback_list.append(callback_max_episodes)
 
-callback = CallbackList(callback_list)
+#callback = CallbackList(callback_list)
 
 #make time eazier to read
 Ttime = str(time.ctime())
@@ -101,7 +102,7 @@ print("Start time: ", t)
 
 # Train for a certain number of timesteps
 model.learn(
-    total_timesteps=1e7, tb_log_name="SAC_airsim_car_run_" + str(time.time()), callback = callback
+    total_timesteps=5e2, tb_log_name=self.time.get_time() + f"{args.log_name}/SAC_airsim_car_round_{self.n_round}", callback = self.callback
 )
 
 # Save policy weights
