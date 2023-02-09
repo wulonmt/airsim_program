@@ -102,7 +102,7 @@ print("Start time: ", t)
 
 # Train for a certain number of timesteps
 model.learn(
-    total_timesteps=5e2, tb_log_name=self.time.get_time() + f"{args.log_name}/SAC_airsim_car_round_{self.n_round}", callback = self.callback
+    total_timesteps=5e2, tb_log_name=t + f"{args.log_name}", callback = callback_list
 )
 
 # Save policy weights
