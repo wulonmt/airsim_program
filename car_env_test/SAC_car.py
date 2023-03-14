@@ -14,6 +14,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.vec_env import VecFrameStack
 
 from EpisodeCheckpointCallback import EpisodeCheckpointCallback
+from CustomSAC import CustomSAC
 
 import argparse
 import json
@@ -27,8 +28,8 @@ args = parser.parse_args()
 
 with open("settings.json") as f:
     settings = json.load(f)
-settings["ViewMode"] = "SpringArmChase"
-#settings["ViewMode"] = "NoDisplay"
+#settings["ViewMode"] = "SpringArmChase"
+settings["ViewMode"] = "NoDisplay"
 Car = settings["Vehicles"]["Car1"]
 if args.track == 1:
     if args.intersection == 1:
@@ -55,6 +56,7 @@ env = gym.make(
                 image_shape=(84, 84, 1),
             )
 env.env.setkwargs(track = args.track)
+env.env.setInitialPos(Car["X"], Car["Y"], Car["Z"])
 env = DummyVecEnv(
     [
         lambda: Monitor(
@@ -70,14 +72,14 @@ env = VecFrameStack(env, n_stack=4)
 env = VecTransposeImage(env)
 
 # Initialize RL algorithm type and parameters
-model = SAC( #action should be continue
+model = CustomSAC( #action should be continue
     "CnnPolicy",
     env,
     learning_rate=0.0003,
     verbose=1,
     batch_size=64,
     train_freq=1,
-    learning_starts=50, #testing origin 1000
+    learning_starts=1, #testing origin 1000
     buffer_size=200000,
     device="auto",
     tensorboard_log="./tb_logs/",
@@ -109,9 +111,9 @@ ep_checkpoint_callback = EpisodeCheckpointCallback(
 
 # Stops training when the model reaches the maximum number of episodes
 callback_max_episodes = StopTrainingOnMaxEpisodes(max_episodes=1e4, verbose=1)
-callback_list.append(callback_max_episodes)
+#callback_list.append(callback_max_episodes)
 
-#callback = CallbackList(callback_list)
+callback = CallbackList(callback_list)
 
 #make time eazier to read
 Ttime = str(time.ctime())
@@ -128,7 +130,7 @@ print("Start time: ", t)
 
 # Train for a certain number of timesteps
 model.learn(
-    total_timesteps=5e2, tb_log_name=t + f"inter{args.intersection}" + f"_{args.log_name}", callback = callback_list
+    total_timesteps=2e4, tb_log_name=t + f"inter{args.intersection}" + f"_{args.log_name}", callback = callback
 )
 
 # Save policy weights
