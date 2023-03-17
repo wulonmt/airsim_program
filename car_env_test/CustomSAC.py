@@ -15,6 +15,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import polyak_update
 from stable_baselines3.sac.policies import CnnPolicy, MlpPolicy, MultiInputPolicy, SACPolicy
 from collections import OrderedDict
+import time
 
 SelfSAC = TypeVar("SelfSAC", bound="SAC")
 
@@ -95,29 +96,6 @@ class CustomSAC(SAC):
         # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
         
-        
-        target_qf0_keys, target_qf1_keys = [], []
-        for key in self.policy.state_dict().keys():
-            if "critic_target.qf0" in key:
-                target_qf0_keys.append(key)
-            elif "critic_target.qf1" in key:
-                target_qf1_keys.append(key)
-        qf0 = [self.policy.state_dict()[key] for key in target_qf0_keys]
-        qf1 = [self.policy.state_dict()[key] for key in target_qf1_keys]
-        print("qf0: ", qf0[0][0][0:4])
-        print("qf1: ", qf1[0][0][0:4])
-        qf0, qf1 = qf1, qf0
-        print("swapped qf0: ", qf0[0][0][0:4])
-        print("swapped qf1: ", qf1[0][0][0:4])
-        policy_dict = self.policy.state_dict()
-        for key, value in zip(target_qf0_keys, qf0):
-            policy_dict[key] = value
-        for key, value in zip(target_qf1_keys, qf1):
-            policy_dict[key] = value
-        print("target_qf0_keys[0]: ", target_qf0_keys[0])
-        print("policy dict qf0 [0][0]: ", policy_dict[target_qf0_keys[0]][0][0:4])
-        self.policy.load_state_dict(policy_dict, strict=True)        
-        
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []
         doubleQ_ratio = []
@@ -173,6 +151,7 @@ class CustomSAC(SAC):
             # Compute critic loss
             critic_loss = 0.5 * sum(F.mse_loss(current_q, target_q_values) for current_q in current_q_values)
             critic_losses.append(critic_loss.item())
+            print("critic loss: ", critic_loss)
 
             # Optimize the critic
             self.critic.optimizer.zero_grad()
