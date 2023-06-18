@@ -124,6 +124,9 @@ class CustomSAC(SAC):
                 ent_coef = self.ent_coef_tensor
             
             ent_coefs.append(ent_coef.item())
+            #add log_prob in tb
+            cpu_log_prob = np.squeeze(log_prob.clone().detach().cpu().numpy()) #Prevent from action error
+            log_pi.append(cpu_log_prob)
 
             # Optimize entropy coefficient, also called
             # entropy temperature or alpha in the paper
@@ -140,7 +143,8 @@ class CustomSAC(SAC):
                 next_q_values, QQindex = th.min(next_q_values, dim=1, keepdim=True)
                 doubleQ_ratio.append(th.mean(QQindex.type(th.DoubleTensor)).item())
                 # add entropy term
-                next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
+                #next_q_values = next_q_values - ent_coef * next_log_prob.reshape(-1, 1)
+                next_q_values = next_q_values - 0.1 * next_log_prob.reshape(-1, 1)
                 # td error + entropy term
                 target_q_values = replay_data.rewards + (1 - replay_data.dones) * self.gamma * next_q_values
 
@@ -186,3 +190,4 @@ class CustomSAC(SAC):
         if len(ent_coef_losses) > 0:
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
         self.logger.record("train/doubleQ_ratio", np.mean(doubleQ_ratio))
+        self.logger.record("train/log_pi", np.mean(log_pi))
