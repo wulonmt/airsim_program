@@ -99,6 +99,7 @@ class CustomSAC(SAC):
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []
         doubleQ_ratio = []
+        log_pi = []
 
         for gradient_step in range(gradient_steps):
             # Sample replay buffer

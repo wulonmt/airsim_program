@@ -19,11 +19,13 @@ from CustomSAC import CustomSAC
 import argparse
 import json
 from subprocess import Popen
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=int, default=1)
 parser.add_argument("-i", "--intersection", help="which intersection car is in", type=int, default=1)
 parser.add_argument("-l", "--log_name", help="modified log name", type=str, nargs='?')
+parser.add_argument("-m", "--model", help="model path to load", type=str, nargs='?')
 args = parser.parse_args()
 
 with open("settings.json") as f:
@@ -71,19 +73,36 @@ env = VecFrameStack(env, n_stack=4)
 # Wrap env as VecTransposeImage to allow SB to handle frame observations
 env = VecTransposeImage(env)
 
-# Initialize RL algorithm type and parameters
-model = CustomSAC( #action should be continue
-    "CnnPolicy",
-    env,
-    learning_rate=0.0003,
-    verbose=1,
-    batch_size=64,
-    train_freq=1,
-    learning_starts=1000, #testing origin 1000
-    buffer_size=200000,
-    device="auto",
-    tensorboard_log="./tb_logs/",
-)
+if args.model is not None: #load the trained model
+    model = CustomSAC.load(
+        args.model,
+        env,
+        learning_rate=0.0003,
+        verbose=1,
+        batch_size=64,
+        train_freq=1,
+        learning_starts=500, #testing origin 1000
+        buffer_size=200000,
+        device="auto",
+        tensorboard_log="./eval_logs/",
+        ent_coef = "auto_1"
+    )
+else:
+    # Initialize RL algorithm type and parameters
+    model = CustomSAC( #action should be continue
+        "CnnPolicy",
+        env,
+        learning_rate=0.0003,
+        verbose=1,
+        batch_size=64,
+        train_freq=1,
+        learning_starts=500, #testing origin 1000
+        buffer_size=200000,
+        device="auto",
+        tensorboard_log="./tb_logs/",
+        ent_coef = "auto_1",
+        target_entropy = -2.0,
+    )
 
 # Create an evaluation callback with the same env, called every 10000 iterations
 callback_list = []
@@ -133,5 +152,8 @@ model.learn(
     total_timesteps=2e4, tb_log_name=t + f"inter{args.intersection}" + f"_{args.log_name}", callback = callback
 )
 
-# Save policy weights
-model.save("SAC_airsim_car_policy")
+if args.model is None: #If model is not trained model, save it
+    # Save policy weights
+    if not os.path.isdir('result_model'):
+        os.mkdir('result_model')
+    model.save("result_model/" + t + f"inter{args.intersection}" + f"_{args.log_name}")
