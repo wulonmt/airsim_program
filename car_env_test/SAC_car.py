@@ -73,8 +73,24 @@ env = VecFrameStack(env, n_stack=4)
 # Wrap env as VecTransposeImage to allow SB to handle frame observations
 env = VecTransposeImage(env)
 
+# Initialize RL algorithm type and parameters
+model = CustomSAC( #action should be continue
+    "CnnPolicy",
+    env,
+    learning_rate=0.0003,
+    verbose=1,
+    batch_size=64,
+    train_freq=1,
+    learning_starts=500, #testing origin 1000
+    buffer_size=200000,
+    device="auto",
+    tensorboard_log="./tb_logs/",
+    ent_coef = "auto_1",
+    target_entropy = -2.0,
+)
+
 if args.model is not None: #load the trained model
-    model = CustomSAC.load(
+    load_model = CustomSAC.load(
         args.model,
         env,
         learning_rate=0.0003,
@@ -87,22 +103,9 @@ if args.model is not None: #load the trained model
         tensorboard_log="./eval_logs/",
         ent_coef = "auto_1"
     )
-else:
-    # Initialize RL algorithm type and parameters
-    model = CustomSAC( #action should be continue
-        "CnnPolicy",
-        env,
-        learning_rate=0.0003,
-        verbose=1,
-        batch_size=64,
-        train_freq=1,
-        learning_starts=500, #testing origin 1000
-        buffer_size=200000,
-        device="auto",
-        tensorboard_log="./tb_logs/",
-        ent_coef = "auto_1",
-        target_entropy = -2.0,
-    )
+    model.policy.load_state_dict(load_model.policy.state_dict())
+
+
 
 # Create an evaluation callback with the same env, called every 10000 iterations
 callback_list = []
