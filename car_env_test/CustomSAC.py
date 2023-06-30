@@ -114,6 +114,7 @@ class CustomSAC(SAC):
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
+            
             if self.ent_coef_optimizer is not None:
                 # Important: detach the variable from the graph
                 # so we don't change it with other losses
@@ -123,6 +124,13 @@ class CustomSAC(SAC):
                 ent_coef_losses.append(ent_coef_loss.item())
             else:
                 ent_coef = self.ent_coef_tensor
+            
+            """
+            ent_coef = th.exp(self.log_ent_coef.detach())
+            if ent_coef > 0.02:
+                ent_coef = th.sub(ent_coef, th.tensor([13e-5]).to(self.device))
+                self.log_ent_coef = th.log(ent_coef).detach()
+            """
             
             ent_coefs.append(ent_coef.item())
             #add log_prob in tb

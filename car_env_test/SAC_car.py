@@ -86,7 +86,7 @@ model = CustomSAC( #action should be continue
     device="auto",
     tensorboard_log="./tb_logs/",
     ent_coef = "auto_1",
-    target_entropy = -2.0,
+    target_entropy = "0.1",
 )
 
 if args.model is not None: #load the trained model
@@ -104,6 +104,7 @@ if args.model is not None: #load the trained model
         ent_coef = "auto_1"
     )
     model.policy.load_state_dict(load_model.policy.state_dict())
+    model.tensorboard_log = "./eval_logs/"
 
 
 
@@ -152,7 +153,7 @@ print("Start time: ", t)
 
 # Train for a certain number of timesteps
 model.learn(
-    total_timesteps=2e4, tb_log_name=t + f"inter{args.intersection}" + f"_{args.log_name}", callback = callback
+    total_timesteps=2e5, tb_log_name=t + f"inter{args.intersection}" + f"_{args.log_name}", callback = callback
 )
 
 if args.model is None: #If model is not trained model, save it
