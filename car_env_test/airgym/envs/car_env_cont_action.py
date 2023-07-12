@@ -153,8 +153,8 @@ class AirSimCarEnvContAction(AirSimEnv):
 
         from PIL import Image
 
-        print(type(img2d))
-        print("img2d size", img2d.shape)
+        #print(type(img2d))
+        #print("img2d size", img2d.shape)
         image = Image.fromarray(img2d)
         im_final = np.array(image.resize((84, 84)).convert("L"))
 
@@ -254,6 +254,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             )
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
+            #print("degree: ", self.Quaternion_Z_deg(self.state["orientation"]), "w_val: ", self.state["orientation"].w_val)
             reward_bound = - (bound_dist_sum**2)
             
             #reward = reward_dist * reward_speed + reward_bound

@@ -26,12 +26,19 @@ parser.add_argument("-t", "--track", help="which track will be used, 0~2", type=
 parser.add_argument("-i", "--intersection", help="which intersection car is in", type=int, default=1)
 parser.add_argument("-l", "--log_name", help="modified log name", type=str, nargs='?')
 parser.add_argument("-m", "--model", help="model path to load", type=str, nargs='?')
+parser.add_argument("-d", "--display", help="display mode, S for SpringArmChase, N for NoDisplay", type=str, default="N")
 args = parser.parse_args()
 
 with open("settings.json") as f:
     settings = json.load(f)
-#settings["ViewMode"] = "SpringArmChase"
-settings["ViewMode"] = "NoDisplay"
+    
+if args.display == "S":
+    settings["ViewMode"] = "SpringArmChase"
+elif args.display == "N":
+    settings["ViewMode"] = "NoDisplay"
+else:
+    print("No such mode")
+
 Car = settings["Vehicles"]["Car1"]
 if args.track == 1:
     if args.intersection == 1:
@@ -85,8 +92,8 @@ model = CustomSAC( #action should be continue
     buffer_size=200000,
     device="auto",
     tensorboard_log="./tb_logs/",
-    ent_coef = "auto_1",
-    target_entropy = "0.1",
+    ent_coef = "0.02",
+    target_entropy = "auto",
 )
 
 if args.model is not None: #load the trained model
