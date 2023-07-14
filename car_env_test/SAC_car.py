@@ -80,6 +80,11 @@ env = VecFrameStack(env, n_stack=4)
 # Wrap env as VecTransposeImage to allow SB to handle frame observations
 env = VecTransposeImage(env)
 
+#add additional layer
+# Custom actor architecture with two layers of 64 units each
+# Custom critic architecture with two layers of 400 and 300 units
+policy_kwargs = dict(net_arch=dict(pi=[256, 256], qf=[512, 256, 256]))
+
 # Initialize RL algorithm type and parameters
 model = CustomSAC( #action should be continue
     "CnnPolicy",
@@ -92,9 +97,11 @@ model = CustomSAC( #action should be continue
     buffer_size=200000,
     device="auto",
     tensorboard_log="./tb_logs/",
-    ent_coef = "0.02",
-    target_entropy = "auto",
+    ent_coef = "auto_10",
+    target_entropy = "1",
+    policy_kwargs=policy_kwargs,
 )
+print(model.policy)
 
 if args.model is not None: #load the trained model
     load_model = CustomSAC.load(
