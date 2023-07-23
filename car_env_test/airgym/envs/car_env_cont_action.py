@@ -177,7 +177,11 @@ class AirSimCarEnvContAction(AirSimEnv):
         r = 2*math.acos(x.w_val) #in rad
         return r*180/math.pi #in deg
         
-    def mid_line_dist(self):
+    def Quaternion_Z_rad(self, x): #x must be Quaternionr in airsim.type
+        r = 2*math.acos(x.w_val) #in rad
+        return r
+        
+    def corner_dist(self):
         pts = [
             np.array([x, y, 0])
             for x, y in self.track[self.track_num][0]
@@ -206,6 +210,18 @@ class AirSimCarEnvContAction(AirSimEnv):
                     )
                     / segment,
                 )
+        return dist
+        
+    def mid_line_dist(self):
+        pts = [
+            np.array([x, y, 0])
+            for x, y in self.track[self.track_num][0]
+        ]
+        car_pt = self.global_pose()
+
+        dist = 10000000
+        for i in range(0, len(pts) - 1):
+            dist = min(dist, np.linalg.norm(np.cross((car_pt - pts[i]), (car_pt - pts[i+1])))/np.linalg.norm(pts[i]-pts[i+1]))
         return dist
         
     def bound_dist(self):
@@ -254,7 +270,8 @@ class AirSimCarEnvContAction(AirSimEnv):
             )
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
-            #print("degree: ", self.Quaternion_Z_deg(self.state["orientation"]), "w_val: ", self.state["orientation"].w_val)
+            print("degree: ", self.Quaternion_Z_deg(self.state["orientation"]), "w_val: ", self.state["orientation"].w_val)
+            #print("state: ", self.state)
             reward_bound = - (bound_dist_sum**2)
             
             #reward = reward_dist * reward_speed + reward_bound
