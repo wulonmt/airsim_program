@@ -110,7 +110,11 @@ class CustomSAC(SAC):
                 self.actor.reset_noise()
 
             # Action by the current actor for the sampled state
-            actions_pi, log_prob = self.actor.action_log_prob(replay_data.observations)
+            obs = replay_data.observations
+            mean_actions, actions_log_std, kwargs = self.actor.get_action_dist_params(obs)
+            print("actions mean: ", np.mean(mean_actions), "log std mean: ", np.mean(log_std_array))
+            
+            actions_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)
 
             ent_coef_loss = None
