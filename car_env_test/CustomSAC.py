@@ -112,7 +112,7 @@ class CustomSAC(SAC):
             # Action by the current actor for the sampled state
             obs = replay_data.observations
             mean_actions, actions_log_std, kwargs = self.actor.get_action_dist_params(obs)
-            print("actions mean: ", np.mean(mean_actions), "log std mean: ", np.mean(log_std_array))
+            print("actions mean: ", np.mean(mean_actions.cpu().detach().numpy(), axis=0), "log std mean: ", np.mean(actions_log_std.cpu().detach().numpy(), axis=0))
             
             actions_pi, log_prob = self.actor.action_log_prob(obs)
             log_prob = log_prob.reshape(-1, 1)

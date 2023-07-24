@@ -98,7 +98,7 @@ model = CustomSAC( #action should be continue
     device="auto",
     tensorboard_log="./tb_logs/",
     ent_coef = "auto_10",
-    target_entropy = "1",
+    target_entropy = "auto",
     policy_kwargs=policy_kwargs,
 )
 print(model.policy)
