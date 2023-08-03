@@ -7,14 +7,49 @@ import time
 import gym
 from gym import spaces
 from airgym.envs.airsim_env import AirSimEnv
+from airgym.envs.car_env_cont_action import AirSimCarEnvContAction
 
 import numpy as np
 from numpy import savetxt
 
-action_file = "action.csv"
-class AirSimCarEnvDiscAction(AirSimEnv):
+"""
+X=0,Y=0,Z=0,Yaw=0
+"""
+track0 = [
+                (0, -1), (128, -1), (128, -128), (0, -128),
+                (0, -1),
+            ]
+bound0 = [
+                (-2, 1), (130, 1), (130, -130), (-2, -130),
+                (-2, 1),
+            ]
+            
+"""
+X=0,Y=0,Z=0,Yaw=180
+"""
+track1 = [
+                (0, -1), (-127, -1), (-127, -128), (0, -128),
+                (0, -1),
+            ]
+bound1 = [
+                (2, 1), (-129, 1), (-129, -130), (2, -130),
+                (2, 1),
+            ]
+"""
+X=0,Y=0,Z=0,Yaw=0
+"""
+track2 = [
+                (0, -1), (-128, -1), (-128, -128), (0, -128),
+                (0, -1),
+            ]
+bound2 = [
+                (-2, 1), (130, 1), (130, -130), (-2, -130),
+                (-2, 1),
+            ]
+            
+class AirSimCarEnvDiscAction(AirSimCarEnvContAction):
     def __init__(self, ip_address, image_shape):
-        super().__init__(image_shape)
+        super().__init__(ip_address, image_shape)
 
         self.image_shape = image_shape
         self.start_ts = 0
@@ -33,28 +68,39 @@ class AirSimCarEnvDiscAction(AirSimEnv):
         self.action_space = spaces.Discrete(6)
 
         self.image_request = airsim.ImageRequest(
-            "0", airsim.ImageType.DepthPerspective, True, False
+            "0", airsim.ImageType.Scene, False, False
         )
+        #CameraID, Data type, pixels as float or not, compressed or not
 
         self.car_controls = airsim.CarControls()
         self.car_state = None
+        
+        self.static_count = 0
+        
+        self.track = [(track0, bound0), (track1, bound1), (track2, bound2)]
+        self.X_ = 0
+        self.Y_ = 0
+        self.Z_ = 0
+        
+        DamnAnimals = [] #Forgive me for cursing the animals which always breaks my training
+        print("Animals: ")
+        for objects in self.car.simListSceneObjects():
+            if "Raccoon" in objects or "Deer" in objects:
+                print(objects)
+                DamnAnimals.append(objects)
+                
+        for animals in DamnAnimals:
+            self.car.simDestroyObject(animals)
+            time.sleep(0.05)
+        print("Animals Cleaned Over.")
 
-    def _setup_car(self):
-        self.car.reset()
-        self.car.enableApiControl(True)
-        self.car.armDisarm(True)
-        time.sleep(0.01)
 
     def __del__(self):
-        self.car.reset()
+        super().__del__()
 
     def _do_action(self, action):
         self.car_controls.brake = 0
         self.car_controls.throttle = 1
-        
-        print("action = ", action)
-        with open(action_file, 'a') as f:
-            savetxt(f, np.array([action]), delimiter = ',', fmt = '%d')
 
         if action == 0:
             self.car_controls.throttle = 0
@@ -73,30 +119,9 @@ class AirSimCarEnvDiscAction(AirSimEnv):
         self.car.setCarControls(self.car_controls)
         time.sleep(1)
 
-    def transform_obs(self, response):
-        img1d = np.array(response.image_data_float, dtype=np.float)
-        img1d = 255 / np.maximum(np.ones(img1d.size), img1d)
-        img2d = np.reshape(img1d, (response.height, response.width))
-
-        from PIL import Image
-
-        image = Image.fromarray(img2d)
-        im_final = np.array(image.resize((84, 84)).convert("L"))
-
-        return im_final.reshape([84, 84, 1])
-
     def _get_obs(self):
-        responses = self.car.simGetImages([self.image_request])
-        image = self.transform_obs(responses[0])
-
-        self.car_state = self.car.getCarState()
-
-        self.state["prev_pose"] = self.state["pose"]
-        self.state["pose"] = self.car_state.kinematics_estimated
-        self.state["collision"] = self.car.simGetCollisionInfo().has_collided
-
-        return image
-
+        return super()._get_obs()
+    """
     def _compute_reward(self):
         MAX_SPEED = 20 #原先的最大值似乎太大
         MIN_SPEED = 10
@@ -150,15 +175,10 @@ class AirSimCarEnvDiscAction(AirSimEnv):
             done = 1
 
         return reward, done
-
-    def step(self, action):
-        self._do_action(action)
-        obs = self._get_obs()
-        reward, done = self._compute_reward()
-
-        return obs, reward, done, self.state
-
+    """
+        
     def reset(self):
         self._setup_car()
         self._do_action(1)
         return self._get_obs()
+        

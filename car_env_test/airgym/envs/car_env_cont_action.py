@@ -132,13 +132,13 @@ class AirSimCarEnvContAction(AirSimEnv):
         self.car.setCarControls(self.car_controls)
         time.sleep(0.8)
         
-    def global_pose(self):
+    def global_pose(self, position):
         """
         In airsim, position coordinates in NED. So we have to shift the position to global coordinate.
         """
-        GP = self.state["pose"].position.to_numpy_array()
+        GP = position.to_numpy_array()
         GP += [self.X_, self.Y_, self.Z_]
-        print("Global Position: ", GP)
+        #print("Global Position: ", GP)
         return GP
 
     def transform_obs(self, response):
@@ -186,7 +186,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             np.array([x, y, 0])
             for x, y in self.track[self.track_num][0]
         ]
-        car_pt = self.global_pose()
+        car_pt = self.global_pose(self.state["pose"].position)
 
         dist = 10000000
         for i in range(0, len(pts) - 1):
@@ -217,12 +217,22 @@ class AirSimCarEnvContAction(AirSimEnv):
             np.array([x, y, 0])
             for x, y in self.track[self.track_num][0]
         ]
-        car_pt = self.global_pose()
+        car_pt = self.global_pose(self.state["pose"].position)
+        moving_vector = self.global_pose(self.state["pose"].position) - self.global_pose(self.state["prev_pose"].position)
+        #print("moving_vector: ", moving_vector)
+        moving_len = np.linalg.norm(moving_vector)
+        mid_line_vector = None
 
         dist = 10000000
         for i in range(0, len(pts) - 1):
-            dist = min(dist, np.linalg.norm(np.cross((car_pt - pts[i]), (car_pt - pts[i+1])))/np.linalg.norm(pts[i]-pts[i+1]))
-        return dist
+            mid_dist = np.linalg.norm(np.cross((car_pt - pts[i]), (car_pt - pts[i+1])))/np.linalg.norm(pts[i]-pts[i+1])
+            if mid_dist < dist:
+                dist = mid_dist
+                mid_line_vector = pts[i+1] - pts[i]
+                
+        #print("mid_line__vector: ", mid_line_vector)
+        cos_angle = np.dot(moving_vector, mid_line_vector)/(moving_len * np.linalg.norm(mid_line_vector))
+        return dist, cos_angle
         
     def bound_dist(self):
         bound_track = self.track[self.track_num][1]
@@ -230,7 +240,7 @@ class AirSimCarEnvContAction(AirSimEnv):
             np.array([x, y, 0])
             for x, y in bound_track
         ]
-        car_pt = self.global_pose()
+        car_pt = self.global_pose(self.state["pose"].position)
         bound_dist_sum = 0
         for i in range(0, len(bound) - 1):
             bound_dist_sum += np.linalg.norm(np.cross((car_pt - bound[i]), (car_pt - bound[i+1])) / np.linalg.norm(bound[i] - bound[i+1]))
@@ -247,7 +257,7 @@ class AirSimCarEnvContAction(AirSimEnv):
 
         THRESH_DIST = 3.5
         BETA = 1  #<-------------------------
-        dist = self.mid_line_dist()
+        dist, angle_cos = self.mid_line_dist()
         bound_dist_sum = self.bound_dist()
         done = 0            
         if dist > THRESH_DIST:
@@ -270,12 +280,12 @@ class AirSimCarEnvContAction(AirSimEnv):
             )
             
             #reward_deg = abs(Quaternion_Z_deg(self.state["orientation"]))
-            print("degree: ", self.Quaternion_Z_deg(self.state["orientation"]), "w_val: ", self.state["orientation"].w_val)
-            #print("state: ", self.state)
+            print("cos: ", angle_cos)
+            reward_speed = reward_speed * abs(angle_cos)
             reward_bound = - (bound_dist_sum**2)
             
-            #reward = reward_dist * reward_speed + reward_bound
-            reward = reward_dist * reward_speed
+            reward = reward_dist * reward_speed + reward_bound
+            #reward = reward_dist * reward_speed
 
             print("position = ",self.state["pose"].position.to_numpy_array())
             print("%-10s" % "dist rew",': %8.3f'%reward_dist, "%-6s" % "dist", ': %.3f'%dist)
