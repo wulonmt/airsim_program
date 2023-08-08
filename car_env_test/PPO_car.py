@@ -82,7 +82,7 @@ model = PPO(
     "CnnPolicy",
     env,
     learning_rate=3e-4,
-    n_steps = 128,
+    n_steps = 256,
     verbose=1,
     batch_size=64,
     clip_range=0.5,
@@ -90,6 +90,7 @@ model = PPO(
     device="cuda",
     tensorboard_log="./tb_logs/",
 )
+print(model.policy)
 
 # Create an evaluation callback with the same env, called every 10000 iterations
 callbacks = []

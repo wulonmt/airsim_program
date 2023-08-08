@@ -49,7 +49,7 @@ bound2 = [
             
 class AirSimCarEnvDiscAction(AirSimCarEnvContAction):
     def __init__(self, ip_address, image_shape):
-        super().__init__(ip_address, image_shape)
+        AirSimEnv.__init__(self, image_shape) #call original init
 
         self.image_shape = image_shape
         self.start_ts = 0
@@ -118,6 +118,7 @@ class AirSimCarEnvDiscAction(AirSimCarEnvContAction):
 
         self.car.setCarControls(self.car_controls)
         time.sleep(1)
+        print("action = ", action)
 
     def _get_obs(self):
         return super()._get_obs()
